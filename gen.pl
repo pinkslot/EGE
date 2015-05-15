@@ -41,77 +41,12 @@ sub print_html {
 </head>
 <body>
 ~;
-    for my $q (@$questions) {
-        print qq~
-<div class="q">
-$q->{text}
-<ol>
-~;
-        my (@v, @correct);
-        if ($q->{type} eq 'sc') {
-            @v = @{$q->{variants}};
-            $correct[$q->{correct}] = 1;
-        }
-        elsif ($q->{type} =~ /^(mc)|(sr)|(cn)$/) {
-            @v = @{$q->{variants}};
-            @correct = @{$q->{correct}};
-        }
-        elsif ($q->{type} eq 'mt') {
-            @v = @{$q->{variants}->[0]};
-            @correct = @{$q->{correct}};
-        }
-        else {
-            @v = ($q->{correct});
-            @correct = ();
-        }
-        for my $i (0..$#v) {
-            my $style = $correct[$i] && ($q->{type} =~ /^(mc)|(sc)$/) ? ' class="correct"' : '';
-            print
-                "<li$style>$v[$i]" . ($q->{type} eq 'mt' ? " - $q->{variants}->[1]->[$i]" : '') . "</li>\n";
-        }
-        if ($q->{type} =~ /^(mt)|(sr)|(cn)$/) {
-            print "</ol>\n<ol>";
-            for my $i (0..$#correct) {
-                print
-                    '<li class="correct">', $q->{type} eq 'mt' ? 
-                        "$v[$i] - $q->{variants}->[1]->[$correct[$i]]</li>\n" :
-                        "$v[$correct[$i]]</li>\n";
-                }
-            }
-        print "</ol>\n</div>\n";
-    }
+    print $_->to_html for @$questions; 
     print "</body>\n</html>";
 }
 
-sub quote {
-    my ($s) = @_;
-    $s =~ s/\\/\\\\/g;
-    $s =~ s/"/\\"/g;
-    $s =~ s/\n/\\n/g;
-    # Запретить восьмеричные литералы
-    $s =~ /^(0|[1-9]\d+)$/ ? $s : qq~"$s"~;
-}
-
-sub json {
-    !ref $_[0] ? quote($_[0]) :
-    ref $_[0] eq 'ARRAY' ? '[' . join(', ', map(json($_), @{$_[0]})) . ']' :
-    ref $_[0] eq 'HASH' ? '{' . join(', ', map(qq~"$_":~ . json($_[0]->{$_}), keys %{$_[0]})) . '}' :
-    die ref $_[0];
-}
-
-sub filter_hash {
-    my ($hash, $keys) = @_;
-    map { exists $hash->{$_} ? ($_ => $hash->{$_}) : () } @$keys;
-}
-
 sub print_json {
-    print "[\n";
-    for my $q (@$questions) {
-        print
-            json({ filter_hash($q, [qw(type text correct variants langs)]) }),
-            $q eq $questions->[$#$questions] ? "\n" : ",\n";
-    }
-    print "]\n";
+    print "[\n" . join(",\n", map $_->to_json, @$questions) . "\n]\n";
 }
 
 sub print_elt {
@@ -244,13 +179,13 @@ binmode STDOUT, ':utf8';
 #g3('Complexity::ComplexityDI', 'cycle_complexity');
 #g3('Complexity', 'complexity');
 #g3('Complexity', 'substitution');
+#g3('Complexity', 'amortized');
 #g3('CallCount', 'super_recursion');
 #g3('Tree', 'node_count');
 #g3('Tree', 'height');
-#g3('Complexity', 'amortized');
 #g3('Graph', 'graph_seq');
 #g3('List', 'construct_command');
-#g3('Sorting', 'sort_command');
+#g3('Sorting', 'sort_line');
 #$questions = EGE::Generate::all;
 #$questions = EGE::AsmGenerate::all;
 #$questions = EGE::DatabaseGenerate::all;

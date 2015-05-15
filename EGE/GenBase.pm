@@ -18,6 +18,53 @@ sub new {
 
 sub post_process {}
 
+sub list_to_html {
+    my ($self, $correct, $variants) = @_;
+    $variants ||= $self->{variants};
+    $correct ||= $self->{correct};
+    join '', map(
+        ($correct->[$_] ? '<li class="correct">' : '<li>') . "$variants->[$_]</li>\n",
+        0 .. $#{$variants}
+    );
+}
+
+sub to_html {
+    qq~
+<div class="q">
+$_[0]->{text}
+<ol>
+~ .
+$_[0]->vars_to_html .
+qq~</ol>
+</div>
+~;
+}
+
+sub quote {
+    my ($s) = @_;
+    $s =~ s/\\/\\\\/g;
+    $s =~ s/"/\\"/g;
+    $s =~ s/\n/\\n/g;
+    # Запретить восьмеричные литералы
+    $s =~ /^(0|[1-9]\d+)$/ ? $s : qq~"$s"~;
+}
+
+sub json {
+    !ref $_[0] ? quote($_[0]) :
+    ref $_[0] eq 'ARRAY' ? '[' . join(', ', map(json($_), @{$_[0]})) . ']' :
+    ref $_[0] eq 'HASH' ? '{' . join(', ', map(qq~"$_":~ . json($_[0]->{$_}), keys %{$_[0]})) . '}' :
+    die ref $_[0];
+}
+
+sub to_hash {
+    my $self = shift;
+    my @keys = qw(type text correct variants options);
+    map { exists $self->{$_} ? ($_ => $self->{$_}) : () } @keys;
+
+}
+
+sub to_json { json { $_[0]->to_hash } }
+
 package EGE::GenBase::SingleChoice;
 use base 'EGE::GenBase';
 
@@ -50,6 +97,12 @@ sub shuffle_variants {
 
 sub post_process { $_[0]->shuffle_variants; }
 
+sub vars_to_html {
+    $_[0]->list_to_html( 
+        [ map $_ == $_[0]->{correct}, 0 .. $#{$_[0]->{variants}} ]
+    );
+}
+
 package EGE::GenBase::DirectInput;
 use base 'EGE::GenBase';
 
@@ -65,6 +118,10 @@ sub accept_number {
 sub post_process {
     $_[0]->{correct} =~ $_[0]->{accept} or
         die 'Correct answer is not acceptable in ', ref $_[0], ': ', $_[0]->{correct};
+}
+
+sub vars_to_html {
+    $_[0]->list_to_html([1], [ $_[0]->{correct} ]);
 }
 
 package EGE::GenBase::MultipleChoice;
@@ -85,6 +142,10 @@ sub shuffle_variants {
     $v[$order[$_]] = $self->{variants}->[$_], $c[$order[$_]] = $self->{correct}->[$_] for @order;
     $self->{variants} = \@v;
     $self->{correct} = \@c;
+}
+
+sub vars_to_html {
+    $_[0]->list_to_html;
 }
 
 package EGE::GenBase::MultipleChoiceFixedVariants;
@@ -120,6 +181,13 @@ sub shuffle_variants {
     $self->{correct} = \@c;
 }
 
+sub vars_to_html {
+    $_[0]->list_to_html([]) . "</ol>\n<ol>\n" . $_[0]->list_to_html(
+        [ map 1, 0 .. $#{$_[0]->{correct}} ],
+        [ map $_[0]->{variants}->[$_], @{$_[0]->{correct}} ]
+    );
+}
+
 package EGE::GenBase::Match;
 use base 'EGE::GenBase::Sortable';
 
@@ -134,8 +202,21 @@ sub post_process {
     $_[0]->{variants} = [ $_[0]->{left_column}, $_[0]->{variants} ];
 }
 
+sub vars_to_html {
+    $_[0]->list_to_html(
+        [], 
+        [ map "$_[0]->{variants}->[0]->[$_] - $_[0]->{variants}->[1]->[$_]", 0 .. $#{$_[0]->{variants}->[1]} ] 
+    ) .
+    $_[0]->list_to_html(
+        [ map 1, 0 .. $#{$_[0]->{variants}->[1]} ],
+        [ map "$_[0]->{variants}->[0]->[$_] - $_[0]->{variants}->[1]->[$_[0]->{correct}->[$_]]", 0 .. $#{$_[0]->{variants}->[1]} ]
+    );
+}
+
 package EGE::GenBase::Construct;
-use base 'EGE::GenBase';
+use base 'EGE::GenBase::Sortable';
+
+sub shuffle_variants { }
 
 sub init {
     $_[0]->{type} = 'cn';
