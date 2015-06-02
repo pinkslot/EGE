@@ -45,8 +45,10 @@ sub quote {
     $s =~ s/\\/\\\\/g;
     $s =~ s/"/\\"/g;
     $s =~ s/\n/\\n/g;
+    # TODO написать в AQuiz'е аналогичный stringify
     # Запретить восьмеричные литералы
-    $s =~ /^(0|[1-9]\d+)$/ ? $s : qq~"$s"~;
+    # $s =~ /^(0|[1-9]\d+)$/ ? $s : qq~"$s"~;
+    qq~"$s"~
 }
 
 sub json {
@@ -57,13 +59,16 @@ sub json {
 }
 
 sub to_hash {
-    my $self = shift;
-    my @keys = qw(type text correct variants options);
+    my ($self, @keys) = @_;
+    @keys = qw(type text correct variants options) if !@keys;
     map { exists $self->{$_} ? ($_ => $self->{$_}) : () } @keys;
 
 }
 
-sub to_json { json { $_[0]->to_hash } }
+sub to_json {
+    my $self = shift;
+    json({ $self->to_hash(@_) });
+}
 
 package EGE::GenBase::SingleChoice;
 use base 'EGE::GenBase';
@@ -98,7 +103,7 @@ sub shuffle_variants {
 sub post_process { $_[0]->shuffle_variants; }
 
 sub vars_to_html {
-    $_[0]->list_to_html( 
+    $_[0]->list_to_html(
         [ map $_ == $_[0]->{correct}, 0 .. $#{$_[0]->{variants}} ]
     );
 }
@@ -204,8 +209,8 @@ sub post_process {
 
 sub vars_to_html {
     $_[0]->list_to_html(
-        [], 
-        [ map "$_[0]->{variants}->[0]->[$_] - $_[0]->{variants}->[1]->[$_]", 0 .. $#{$_[0]->{variants}->[1]} ] 
+        [],
+        [ map "$_[0]->{variants}->[0]->[$_] - $_[0]->{variants}->[1]->[$_]", 0 .. $#{$_[0]->{variants}->[1]} ]
     ) .
     $_[0]->list_to_html(
         [ map 1, 0 .. $#{$_[0]->{variants}->[1]} ],
@@ -220,7 +225,7 @@ sub shuffle_variants { }
 
 sub init {
     $_[0]->{type} = 'cn';
-    $_[0]->{correct} = [];    
+    $_[0]->{correct} = [];
 }
 
 1;

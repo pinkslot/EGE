@@ -18,10 +18,12 @@ use EGE::Gen::Math::Summer;
 
 my $questions;
 
-sub g { push @$questions, EGE::Generate::g(@_); }
-sub g1 { push @$questions, EGE::AsmGenerate::g(@_); }
-sub g2 { push @$questions, EGE::DatabaseGenerate::g(@_); }
-sub g3 { push @$questions, EGE::AlgGenerate::g(@_); }
+my ($g, $g1, $g2, $g3) = map "EGE::${_}Generate"->new, qw(EGE Asm Database Alg);
+
+sub g { push @$questions, $g->g(@_); }
+sub g1 { push @$questions, $g1->g(@_); }
+sub g2 { push @$questions, $g2->g(@_); }
+sub g3 { push @$questions, $g3->g(@_); }
 
 sub print_dump {
     for (@$questions) {
@@ -78,38 +80,38 @@ EOT
 
 binmode STDOUT, ':utf8';
 
-#g('A1', 'recode');
-#g('A1', 'simple');
-#g('A2', 'sport');
-#g('A2', 'car_numbers');
-#g('A2', 'database');
-#g('A2', 'units');
-#g('A2', 'min_routes');
-#g('A3', 'ones');
-#g('A3', 'zeroes');
-#g('A3', 'convert');
-#g('A3', 'range');
-#g('A4', 'sum');
-#g('A5', 'arith');
-#g('A5', 'div_mod_10');
-#g('A5', 'div_mod_rotate');
-#g('A5', 'crc');
-#g('A6', 'count_by_sign');
-#g('A6', 'bus_station');
-#g('A6', 'find_min_max');
-#g('A6', 'count_odd_even');
-#g('A6', 'alg_min_max');
-#g('A6', 'alg_avg');
-#g('A7', 'names');
-#g('A7', 'animals');
-#g('A7', 'random_sequences');
-#g('A7', 'restore_password');
-#g('A7', 'spreadsheet_shift');
-#g('A8', 'equiv_3');
-#g('A8', 'equiv_4');
-#g('A9', 'truth_table_fragment');
-#g('A9', 'find_var_len_code');
-#g('A9', 'error_correction_code');
+#g('A01', 'recode');
+#g('A01', 'simple');
+#g('A02', 'sport');
+#g('A02', 'car_numbers');
+#g('A02', 'database');
+#g('A02', 'units');
+#g('A02', 'min_routes');
+#g('A03', 'ones');
+#g('A03', 'zeroes');
+#g('A03', 'convert');
+#g('A03', 'range');
+#g('A04', 'sum');
+#g('A05', 'arith');
+#g('A05', 'div_mod_10');
+#g('A05', 'div_mod_rotate');
+#g('A05', 'crc');
+#g('A06', 'count_by_sign');
+#g('A06', 'bus_station');
+#g('A06', 'find_min_max');
+#g('A06', 'count_odd_even');
+#g('A06', 'alg_min_max');
+#g('A06', 'alg_avg');
+#g('A07', 'names');
+#g('A07', 'animals');
+#g('A07', 'random_sequences');
+#g('A07', 'restore_password');
+#g('A07', 'spreadsheet_shift');
+#g('A08', 'equiv_3');
+#g('A08', 'equiv_4');
+#g('A09', 'truth_table_fragment');
+#g('A09', 'find_var_len_code');
+#g('A09', 'error_correction_code');
 #g('A10', 'graph_by_matrix');
 #g('A11', 'variable_length');
 #g('A11', 'fixed_length');
@@ -185,13 +187,13 @@ binmode STDOUT, ':utf8';
 #g3('Tree', 'height');
 #g3('Graph', 'graph_seq');
 #g3('List', 'construct_command');
-#g3('Sorting', 'sort_line');
-#$questions = EGE::Generate::all;
-#$questions = EGE::AsmGenerate::all;
-#$questions = EGE::DatabaseGenerate::all;
-#$questions = EGE::AlgGenerate::all;
+#g3('Sorting', 'sort_command');
 
-#push @$questions, EGE::Gen::Math::Summer::g($_) for qw(p1 p2 p3 p4 p5 p6 p7);
+push @$questions, EGE::Gen::Math::Summer::g($_) for qw(p1 p2 p3 p4 p5 p6 p7);
+$questions = $g->all;
+$questions = $g1->all;
+$questions = $g2->all;
+$questions = $g3->all;
 
 print_html;
 #print_json;
